@@ -7,7 +7,11 @@
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 20000);
     try {
       const response = await fetch(url, {signal: controller.signal, credentials: 'omit', referrerPolicy: 'no-referrer'});
-      if (!response.ok) throw new Error(`行情服務回應 HTTP ${response.status}${response.status === 429 ? '，請稍後再試' : ''}。`);
+      if (!response.ok) {
+        let detail = '';
+        try {const body = await response.json(); detail = String(body.error || body.msg || '').slice(0, 180);} catch {}
+        throw new Error(`行情服務回應 HTTP ${response.status}${response.status === 429 ? '，請稍後再試' : ''}。${detail}`);
+      }
       return await response.json();
     } catch (error) {
       if (error.name === 'AbortError') throw new Error('行情來源逾時，請稍後再試或改用其他來源。');

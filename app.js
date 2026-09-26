@@ -119,7 +119,9 @@
   function autoRefresh() {if (!activeOptions || busy || dirty || document.hidden || !$('auto-refresh').checked) return; const s = StockMarket.session(new Date(), activeContext?.calendars); if (s.inHours || (activeContext && report?.provisional && !s.inHours)) run(activeOptions);}
   setInterval(autoRefresh, 30000);
   document.addEventListener('visibilitychange', () => {if (!document.hidden) autoRefresh();});
-  $('launch-note').hidden = location.protocol === 'http:' && location.hostname === '127.0.0.1';
+  const apiConnection = StockMarket.connection();
+  $('launch-note').hidden = apiConnection.ready;
+  if (!apiConnection.ready) $('launch-note').textContent = apiConnection.message;
   $('download').addEventListener('click', () => { if (!report) return; const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], {type: 'application/json;charset=utf-8'})); const a = node('a'); a.href = url; a.download = `${report.symbol}-${report.latest_date}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); });
   $('print').addEventListener('click', () => window.print());
 })();

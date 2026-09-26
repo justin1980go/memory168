@@ -47,11 +47,26 @@
       source: '證交所基本市況報導（含上櫃）', source_url: 'https://mis.twse.com.tw/stock/index.jsp',
       error: valid ? null : '目前沒有有效的一般交易成交價（可能尚未成交、暫停交易或來源未更新）。'};
   }
+  function connection() {
+    const local = typeof location !== 'undefined' && location.protocol === 'http:' && location.hostname === '127.0.0.1';
+    if (local) return {ready: true, mode: 'local', base: 'api/quote'};
+    const configured = String(root.STOCK_CONFIG?.quoteApiBase || '').trim();
+    if (!configured) return {ready: false, mode: 'unconfigured', message: '線上行情 API 尚未設定：請在 config.js 填入已部署的 Workers 網址。也可使用「啟動看盤.exe」取得本機盤中行情。'};
+    try {
+      const u = new URL(configured);
+      if (u.protocol !== 'https:' || u.username || u.password || u.search || u.hash || u.pathname !== '/') throw new Error();
+      return {ready: true, mode: 'online', base: `${u.origin}/quote`};
+    } catch {return {ready: false, mode: 'invalid', message: 'config.js 的行情 API 必須是 HTTPS 根網址，不含 /quote、查詢參數、帳號或密碼。'};}
+  }
+  function quoteURL(options) {
+    const c = connection();
+    if (!c.ready) throw new Error(c.message);
+    return `${c.base}?code=${encodeURIComponent(options.symbol)}&market=${options.market}`;
+  }
   async function load(options) {
     const now = new Date();
-    const local = typeof location !== 'undefined' && location.protocol === 'http:' && location.hostname === '127.0.0.1';
     const jobs = await Promise.allSettled([
-      local ? root.StockData.getJSON(`api/quote?code=${encodeURIComponent(options.symbol)}&market=${options.market}`).then(p => parseMIS(p, options)) : Promise.reject(new Error('請使用資料夾內的「啟動看盤.exe」取得盤中行情；直接開啟 HTML 僅能查看日線。')),
+      Promise.resolve().then(() => root.StockData.getJSON(quoteURL(options))).then(p => parseMIS(p, options)),
       calendars(now)
     ]);
     return {quote: jobs[0].status === 'fulfilled' ? jobs[0].value : null,
@@ -120,6 +135,6 @@
       quote_fetched: !!q, provisional: mode === 'live' || mode === 'delayed' || mode === 'pending'});
     return analysis;
   }
-  root.StockMarket = {load, build, parseMIS, parseCalendar, session, lastCompletedDate, clock};
+  root.StockMarket = {load, build, parseMIS, parseCalendar, session, lastCompletedDate, clock, connection, quoteURL};
   if (typeof module !== 'undefined') module.exports = root.StockMarket;
 })(globalThis);
