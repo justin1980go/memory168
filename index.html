@@ -8,12 +8,14 @@
   <link rel="stylesheet" href="style.css">
   <script defer src="engine.js"></script>
   <script defer src="data.js"></script>
+  <script defer src="market.js"></script>
+  <script defer src="insights.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
   <header class="topbar"><a class="brand" href="index.html"><span class="brand-icon">↗</span> 台股短線觀察室</a><span class="edition">PORTABLE / 可攜網頁版</span></header>
   <main>
-    <section class="intro"><div><p class="eyebrow">TAIWAN MARKET · 01—05 DAYS</p><h1>看清價位，<br class="mobile-break">再決定下一步。</h1><p class="muted">從日成交資料出發，用透明規則整理趨勢、支撐與出場條件。</p></div><div class="local-badge"><span class="dot"></span> 瀏覽器內計算<br><small>免安裝 · 連網查詢 · 檔案可攜</small></div></section>
+    <section class="intro"><div><p class="eyebrow">TAIWAN MARKET · 01—05 DAYS</p><h1>看清價位，<br class="mobile-break">再決定下一步。</h1><p class="muted">盤中看最新成交，收盤看最後收盤；讓價位與當下市場同步。</p></div><div class="local-badge"><span class="dot"></span> 瀏覽器內計算<br><small>免安裝 · 連網查詢 · 檔案可攜</small></div></section>
     <div class="layout">
       <aside class="panel input-panel">
         <div class="section-heading"><span class="eyebrow">01 / 查詢設定</span><span class="tag">日線</span></div>
@@ -23,26 +25,30 @@
           <div class="form-row"><div><label for="market">市場</label><select id="market"><option value="TW">上市</option><option value="TWO">上櫃</option></select></div><div><label for="asset">資產類型</label><select id="asset"><option value="stock">股票</option><option value="etf">ETF</option></select></div></div>
           <label for="cost">持有成本 <span class="optional">選填</span></label><div class="input-unit"><input id="cost" type="number" min="0.0001" step="any" placeholder="空白表示尚未持有"><span>元</span></div>
           <div id="nav-field" hidden><label for="nav">每單位淨值 NAV <span class="optional">選填</span></label><div class="input-unit"><input id="nav" type="number" min="0.0001" step="any" placeholder="請填同一交易日的淨值"><span>元</span></div><p class="field-note">請自行確認 NAV 與行情日期一致。</p></div>
-          <label for="source">行情來源</label><select id="source"><option value="auto">自動選擇（FinMind 優先）</option><option value="finmind">FinMind</option><option value="twse">臺灣證券交易所（上市）</option></select>
+          <label for="source">歷史日線來源</label><select id="source"><option value="auto">自動選擇（FinMind 優先）</option><option value="finmind">FinMind</option><option value="twse">臺灣證券交易所（上市）</option></select>
+          <p class="field-note">盤中成交另向證交所基本市況報導查詢。</p>
           <button class="primary" id="submit" type="submit">查詢並分析 <span>↗</span></button>
           <p class="field-note">查詢代號會傳送至行情來源；成本與 NAV 僅在本機計算。首次查詢可能需數秒。</p>
         </form>
+        <label class="auto-refresh"><input id="auto-refresh" type="checkbox" checked> 盤中每 30 秒自動更新</label><p id="refresh-state" class="field-note">查詢後開始；背景分頁暫停更新。</p>
         <div class="sidebar-note"><strong>一份資料，一套規則。</strong><p>觀察週期為 1–5 個交易日。價位由近期高低點、均線與 ATR 推算，沒有 AI 預測機率。</p><a href="README.txt" target="_blank" rel="noopener">使用說明 ↗</a></div>
       </aside>
       <section class="workspace" aria-label="分析結果">
-        <div id="status" class="status" role="status" aria-live="polite">準備就緒。輸入代號，開始查詢最近可取得的日行情。</div>
+        <div id="launch-note" class="notice" hidden>請雙擊資料夾內的「啟動看盤.exe」開啟完整版本。直接開啟 HTML 僅能取得歷史日線與近期資訊，無法直接讀取盤中成交。</div>
+        <div id="status" class="status" role="status" aria-live="polite">準備就緒。輸入代號，開始查詢最新可取得的行情。</div>
         <div id="empty" class="panel empty-state"><div class="empty-icon">▥</div><p class="eyebrow">YOUR NEXT MOVE, WITH CONTEXT</p><h2>把價格，放回趨勢裡。</h2><p>查詢後，這裡會顯示走勢、關鍵價位與三種可能情境。</p><div class="empty-features"><span>01 趨勢與量能</span><span>02 支撐與壓力</span><span>03 行動與失效條件</span></div></div>
         <div id="results" hidden>
-          <section class="panel quote-panel"><div class="section-heading"><div><p class="eyebrow" id="result-symbol"></p><h2 id="result-title">日線分析</h2></div><span class="trend" id="trend"></span></div><div class="quote-line"><strong id="close"></strong><span id="change"></span><span class="muted">最近收盤 · TWD</span></div><p id="provenance" class="field-note"></p><div class="metrics" id="metrics"></div></section>
+          <section class="panel quote-panel"><div class="section-heading"><div><p class="eyebrow" id="result-symbol"></p><h2 id="result-title">最新行情分析</h2></div><span class="trend" id="trend"></span></div><div class="quote-line"><strong id="close"></strong><span id="change"></span><span id="price-label" class="muted">價格 · TWD</span></div><p id="provenance" class="field-note"></p><div class="metrics" id="metrics"></div></section>
           <div id="warnings" class="notice"></div>
-          <section class="panel chart-panel"><div class="section-heading"><h3>價格與均線</h3><div class="legend"><span class="legend-close">收盤</span><span class="legend-sma5">MA5</span><span class="legend-sma20">MA20</span></div></div><svg id="chart" viewBox="0 0 800 250" role="img" aria-label="最近 60 個交易日收盤與均線走勢"></svg><p class="field-note">原始成交價格，未做除權息／分割還原。</p></section>
+          <section class="panel chart-panel"><div class="section-heading"><h3>價格與均線 · 近三個月</h3><div class="legend"><span class="legend-up">紅漲</span><span class="legend-down">綠跌</span><span class="legend-sma5">MA5</span><span class="legend-sma20">MA20</span></div></div><svg id="chart" viewBox="0 0 800 300" role="img" aria-label="近三個月日 K 線、成交量與均線"></svg><p id="chart-note" class="field-note">滑鼠移至 K 線可查看開高低收與量。原始成交價格，未做除權息／分割還原。</p></section>
           <div class="detail-grid"><section class="panel"><p class="eyebrow">02 / 關鍵價位</p><h3>支撐與壓力</h3><div id="levels"></div></section><section class="panel plan-panel"><p class="eyebrow">03 / 操作計畫</p><h3 id="plan-title"></h3><div id="plan"></div></section></div>
           <section class="panel"><div class="section-heading"><h3>未來 1–5 日情境</h3><span class="field-note">條件推演，非機率預測</span></div><div class="scenarios" id="scenarios"></div></section>
+          <section class="panel insights-panel" id="recent-info"><div class="section-heading"><div><p class="eyebrow">04 / 近期資訊</p><h3>籌碼、除權息與相關新聞</h3></div><span id="info-time" class="field-note"></span></div><p class="field-note">各項更新時間不同；法人為盤後公布資料，新聞按時間列示，未以 AI 判定重要性。</p><div class="info-grid"><article><h4>法人買賣超 · 最近 5 日</h4><div id="flow-info" aria-live="polite">尚未查詢</div></article><article><h4>近期／已公告除權息</h4><div id="dividend-info" aria-live="polite">尚未查詢</div></article></div><article class="news-section"><h4>個股相關新聞 · 最近 14 日</h4><div id="news-info" aria-live="polite">尚未查詢</div></article></section>
           <div class="report-actions"><button type="button" id="download">下載分析 JSON ↓</button><button type="button" id="print">列印／另存 PDF ↗</button></div>
         </div>
       </section>
     </div>
-    <footer>規則式分析不保證價格表現。資料可能延遲；盤中交易請以券商即時報價為準。<span>TW STOCK / LOCAL EDITION 1.0</span></footer>
+    <footer>規則式分析不保證價格表現。資料可能延遲；盤中交易請以券商即時報價為準。<span>TW STOCK / LOCAL EDITION 2.0</span></footer>
   </main>
 </body>
 </html>

@@ -73,6 +73,6 @@
     memory.set(key, {timestamp: Date.now(), data});
     return {...data, cached: false};
   }
-  root.StockData = {load, today, parseFinMind, parseTWSE};
+  root.StockData = {load, today, parseFinMind, parseTWSE, getJSON};
   if (typeof module !== 'undefined') module.exports = root.StockData;
 })(globalThis);
