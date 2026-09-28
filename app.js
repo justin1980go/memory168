@@ -16,7 +16,7 @@
     const min = lo - padding, max = hi + padding;
     const x = i => 58 + i / (data.length - 1) * 714, y = v => 207 - (v - min) / (max - min) * 185;
     const add = (tag, attrs, text) => { const el = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, value); if (text) el.textContent = text; svg.append(el); return el; };
-    for (let i = 0; i < 4; i++) { const value = min + (max - min) * i / 3, yy = y(value); add('line', {x1: 54, x2: 778, y1: yy, y2: yy, stroke: '#e4e9df', 'stroke-dasharray': '3 4'}); add('text', {x: 44, y: yy + 4, fill: '#71817a', 'text-anchor': 'end', 'font-size': 11}, number(value)); }
+    for (let i = 0; i < 4; i++) { const value = min + (max - min) * i / 3, yy = y(value); add('line', {x1: 54, x2: 778, y1: yy, y2: yy, stroke: '#efdae2', 'stroke-dasharray': '3 4'}); add('text', {x: 44, y: yy + 4, fill: '#806572', 'text-anchor': 'end', 'font-size': 11}, number(value)); }
     const width = Math.max(2, Math.min(9, 540 / data.length)), maxVolume = Math.max(...data.map(r => r.volume), 1);
     data.forEach((r, i) => {
       const color = r.close >= r.open ? '#bd5541' : '#127360';
@@ -25,12 +25,12 @@
       add('rect', {x: x(i) - width / 2, y: 269 - r.volume / maxVolume * 36, width, height: Math.max(1, r.volume / maxVolume * 36), fill: color, opacity: .35});
       for (const el of [wick, body]) {const title = document.createElementNS(svg.namespaceURI, 'title'); title.textContent = `${r.date}${r.provisional ? '（未完成）' : ''} 開 ${r.open} / 高 ${r.high} / 低 ${r.low} / ${r.provisional ? '成交' : '收'} ${r.close} / 量 ${number(r.volume)} 股`; el.append(title);}
     });
-    add('text', {x: 54, y: 230, fill: '#71817a', 'font-size': 10}, '成交量');
+    add('text', {x: 54, y: 230, fill: '#806572', 'font-size': 10}, '成交量');
     for (const [key, color] of [['sma5', '#c89146'], ['sma20', '#7a96ad']]) {
       const points = data.map((r, i) => r[key] == null ? null : `${x(i)},${y(r[key])}`).filter(Boolean).join(' ');
       add('polyline', {points, fill: 'none', stroke: color, 'stroke-width': key === 'close' ? 2.6 : 1.6, 'stroke-linejoin': 'round'});
     }
-    for (const i of [0, Math.floor((data.length - 1) / 2), data.length - 1]) add('text', {x: x(i), y: 292, fill: '#71817a', 'font-size': 11, 'text-anchor': i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'}, data[i].date);
+    for (const i of [0, Math.floor((data.length - 1) / 2), data.length - 1]) add('text', {x: x(i), y: 292, fill: '#806572', 'font-size': 11, 'text-anchor': i === 0 ? 'start' : i === data.length - 1 ? 'end' : 'middle'}, data[i].date);
   }
   function render(result, rows) {
     $('result-symbol').textContent = `${result.symbol} ${result.name || ''}`;
